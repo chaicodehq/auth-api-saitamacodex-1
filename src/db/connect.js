@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 /**
  * TODO: Connect to MongoDB
@@ -9,4 +9,10 @@ import mongoose from 'mongoose';
  */
 export async function connectDB(uri) {
   // Your code here
+  if (!uri) {
+    throw new Error("MongoDB URI is required");
+  }
+  const dbConnect = await mongoose.connect(uri);
+  console.log(`MongoDB Connected: ${dbConnect.connection.host}`);
+  return dbConnect;
 }

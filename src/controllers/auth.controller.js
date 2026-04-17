@@ -1,6 +1,6 @@
-import bcrypt from 'bcryptjs';
-import { User } from '../models/user.model.js';
-import { signToken } from '../utils/jwt.js';
+import bcrypt from "bcryptjs";
+import { User } from "../models/user.model.js";
+import { signToken } from "../utils/jwt.js";
 
 /**
  * TODO: Register a new user
@@ -14,7 +14,32 @@ import { signToken } from '../utils/jwt.js';
 export async function register(req, res, next) {
   try {
     // Your code here
+    const { name, email, password, role } = req.body;
+    const isUserExist = await User.findOne({ email });
+
+    if (isUserExist) {
+      const error = new Error("Email already exists");
+      error.statusCode = 409;
+      return next(error);
+    }
+    // user creation
+    // any validation error occurs during insert, it will throw an error
+    // and we will pass it to mext middleware
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role,
+    });
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return res.status(201).json({
+      user: userObj,
+    });
   } catch (error) {
+    // here "error" is an object
     next(error);
   }
 }
@@ -32,7 +57,39 @@ export async function register(req, res, next) {
  */
 export async function login(req, res, next) {
   try {
-    // Your code here
+    const { email, password: clearTextPass } = req.body;
+    const findUser = await User.findOne({ email }).select("+password");
+    if (!findUser) {
+      return res
+        .status(401)
+        .json({ error: { message: "Invalid credentials" } });
+    }
+    const isPassMatched = await bcrypt.compare(
+      clearTextPass,
+      findUser.password,
+    );
+    if (!isPassMatched) {
+      return res.status(401).json({
+        error: {
+          message: "Invalid credentials",
+        },
+      });
+    }
+
+    // generate tokens
+    const token = signToken({
+      userId: findUser._id,
+      email: findUser.email,
+      role: findUser.role,
+    });
+
+    const userObj = findUser.toObject();
+    delete userObj.password;
+
+    res.status(200).json({
+      user: userObj,
+      token: token,
+    });
   } catch (error) {
     next(error);
   }
@@ -46,7 +103,9 @@ export async function login(req, res, next) {
  */
 export async function me(req, res, next) {
   try {
-    // Your code here
+    return res.status(200).json({
+      user: req.user,
+    });
   } catch (error) {
     next(error);
   }

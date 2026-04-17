@@ -1,8 +1,8 @@
-import express from 'express';
-import authRoutes from './routes/auth.routes.js';
-import userRoutes from './routes/user.routes.js';
-import { errorHandler } from './middlewares/error.middleware.js';
-import { notFound } from './middlewares/notFound.middleware.js';
+import express from "express";
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
+import { notFound } from "./middlewares/notFound.middleware.js";
 
 /**
  * TODO: Create Express app
@@ -18,4 +18,24 @@ import { notFound } from './middlewares/notFound.middleware.js';
  */
 export function createApp() {
   // Your code here
+  const app = express();
+
+  // middleware
+  app.use(express.json());
+
+  // routes
+  app.get("/health", (req, res) => {
+    res.json({
+      ok: true,
+    });
+  });
+
+  // auth routes
+  app.use("/api/auth", authRoutes);
+  app.use("/api/users", userRoutes);
+
+  app.use(notFound);
+  app.use(errorHandler);
+
+  return app;
 }
